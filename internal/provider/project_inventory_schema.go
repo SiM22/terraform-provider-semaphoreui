@@ -219,7 +219,6 @@ func ProjectInventorySchema() superschema.Schema {
 						Resource: &schemaR.StringAttribute{
 							Required: true,
 							Validators: []validator.String{
-								// Only relative paths are allowed
 								stringvalidator.RegexMatches(
 									regexp.MustCompile(`^[^/].*$`),
 									"must be a relative path (path/to/inventory)",

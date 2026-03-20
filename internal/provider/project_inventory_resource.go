@@ -11,7 +11,6 @@ import (
 	"terraform-provider-semaphoreui/semaphoreui/models"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.Resource                     = &projectInventoryResource{}
 	_ resource.ResourceWithConfigure        = &projectInventoryResource{}
@@ -44,12 +43,10 @@ func (r *projectInventoryResource) Configure(_ context.Context, req resource.Con
 	r.client = client
 }
 
-// Metadata returns the resource type name.
 func (r *projectInventoryResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_project_inventory"
 }
 
-// Schema defines the schema for the resource.
 func (r *projectInventoryResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = ProjectInventorySchema().GetResource(ctx)
 }
@@ -152,7 +149,6 @@ func convertInventoryResponseToProjectInventoryModel(inventory *models.Inventory
 	return model
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *projectInventoryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan ProjectInventoryModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -174,7 +170,6 @@ func (r *projectInventoryResource) Create(ctx context.Context, req resource.Crea
 	}
 	plan = convertInventoryResponseToProjectInventoryModel(response.Payload)
 
-	// Set state to fully populated data
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -182,9 +177,7 @@ func (r *projectInventoryResource) Create(ctx context.Context, req resource.Crea
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *projectInventoryResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Get current state
 	var state ProjectInventoryModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -205,7 +198,6 @@ func (r *projectInventoryResource) Read(ctx context.Context, req resource.ReadRe
 	}
 	state = convertInventoryResponseToProjectInventoryModel(response.Payload)
 
-	// Set refreshed state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -213,9 +205,7 @@ func (r *projectInventoryResource) Read(ctx context.Context, req resource.ReadRe
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *projectInventoryResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Retrieve values from plan
 	var plan ProjectInventoryModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -250,7 +240,6 @@ func (r *projectInventoryResource) Update(ctx context.Context, req resource.Upda
 	}
 	plan = convertInventoryResponseToProjectInventoryModel(response.Payload)
 
-	// Update resource state with updated project
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -258,9 +247,7 @@ func (r *projectInventoryResource) Update(ctx context.Context, req resource.Upda
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *projectInventoryResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// Retrieve values from state
 	var state ProjectInventoryModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -273,6 +260,7 @@ func (r *projectInventoryResource) Delete(ctx context.Context, req resource.Dele
 		ProjectID:   state.ProjectID.ValueInt64(),
 		InventoryID: state.ID.ValueInt64(),
 	}, nil)
+
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Deleting SemaphoreUI Project Inventory",
