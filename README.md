@@ -1,47 +1,39 @@
 # Terraform SemaphoreUI Provider
 
-[![Registry](https://img.shields.io/badge/registry-CruGlobal%2Fsemaphoreui-623CE4)](https://registry.terraform.io/providers/CruGlobal/semaphoreui/latest/docs)
+The SemaphoreUI provider enables Terraform and OpenTofu to manage [SemaphoreUI](https://semaphoreui.com/) resources.
 
-> **Status: AI-supported, not actively maintained.** This provider was
-> developed for an internal use case and is now maintained on a
-> best-effort basis with AI assistance. Dependabot keeps dependencies
-> and security advisories up to date automatically (patch and minor
-> bumps auto-merge; majors require manual review). Feature work, bug
-> fixes, and other changes happen on a best-effort basis. **Pull
-> requests and issues are welcome** — they may take time to be
-> reviewed. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the
-> contribution workflow.
+This repository is maintained as the `SiM22` fork of the original [`CruGlobal/terraform-provider-semaphoreui`](https://github.com/CruGlobal/terraform-provider-semaphoreui). Thank you to the original upstream creator and contributors for building and open-sourcing the provider.
 
-The [SemaphoreUI Provider](https://registry.terraform.io/providers/CruGlobal/semaphoreui/latest/docs)
-enables [Terraform](https://terraform.io) to manage
-[SemaphoreUI](https://semaphoreui.com/) resources — projects,
-environments, inventories, keys, repositories, schedules, templates,
-users, and views.
+## What is different in this fork
 
-Releases are managed automatically by [release-please](https://github.com/googleapis/release-please)
-based on Conventional Commit messages. The [`CHANGELOG.md`](CHANGELOG.md)
-follows the [Keep a Changelog](https://keepachangelog.com/) spec.
+This fork keeps the upstream provider foundation and adds functionality needed for environments that manage OpenTofu natively through SemaphoreUI.
+
+Current differences include:
+
+- native SemaphoreUI template support for `app = "tofu"`
+- inventory support for `tofu_workspace`
+- ongoing maintenance of fork-specific functionality until it is available upstream
 
 ## Requirements
 
-A reachable installation of [SemaphoreUI](https://semaphoreui.com/) and
-an API token. See the
-[provider docs](https://registry.terraform.io/providers/CruGlobal/semaphoreui/latest/docs)
-for the available configuration options.
+This provider requires a running [SemaphoreUI](https://semaphoreui.com/) instance.
 
-The provider is tested against the **three most recent SemaphoreUI minor
-lines** — currently `v2.16.x`, `v2.17.x`, and `v2.18.x`. See the
-[`Tests` workflow](https://github.com/CruGlobal/terraform-provider-semaphoreui/blob/main/.github/workflows/test.yml)
-for the exact pinned versions.
+The provider acceptance tests target supported SemaphoreUI versions defined in [`.github/workflows/test.yml`](.github/workflows/test.yml).
 
-## SemaphoreUI API client
+## SemaphoreUI API Client
 
-The SemaphoreUI API client (`semaphoreui/client/`, `semaphoreui/models/`)
-is generated from the local
-[`api-docs.yml`](api-docs.yml) via
-[go-swagger](https://goswagger.io/go-swagger/). The local spec is a
-patched copy of the upstream
-[semaphoreui/semaphore](https://github.com/semaphoreui/semaphore/blob/develop/api-docs.yml)
-spec — small nullability tweaks are re-applied on top of each upstream
-import so the generated client matches the actual API behavior. See
-[`CONTRIBUTING.md`](CONTRIBUTING.md) for the regeneration workflow.
+The SemaphoreUI API client is generated from the Swagger (OpenAPI 2.0) specification in [`api-docs.yml`](api-docs.yml), which is derived from the upstream SemaphoreUI API definition in the [`semaphoreui/semaphore`](https://github.com/semaphoreui/semaphore) project.
+
+To regenerate the client, install [go-swagger](https://goswagger.io/go-swagger/install/install-binary/) and run:
+
+```shell
+task client
+```
+
+## Publishing
+
+This fork is intended to be published as its own provider lineage under the `SiM22` namespace.
+
+## Support
+
+This fork is maintained on a best-effort basis. Issues and pull requests are welcome.
