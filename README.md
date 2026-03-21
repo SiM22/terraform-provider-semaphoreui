@@ -1,17 +1,39 @@
 # Terraform SemaphoreUI Provider
 
-The [SemaphoreUI Provider](https://registry.terraform.io/providers/CruGlobal/semaphoreui/latest/docs) enables [Terraform](https://terraform.io) to manage [SemaphoreUI](https://semaphoreui.com/) resources.
+The SemaphoreUI provider enables Terraform and OpenTofu to manage [SemaphoreUI](https://semaphoreui.com/) resources.
 
-This project uses Conventional Commits in order to automatically manage releases as well as keeping the CHANGELOG.md updated. CHANGELOG follows the Keep a Changelog spec.
+This repository is maintained as the `SiM22` fork of the original [`CruGlobal/terraform-provider-semaphoreui`](https://github.com/CruGlobal/terraform-provider-semaphoreui). Thank you to the original upstream creator and contributors for building and open-sourcing the provider.
 
-### Requirements
-This provider requires an installation of [SemaphoreUI](https://semaphoreui.com/).
+## What is different in this fork
 
-The provider is tested against the latest 3 versions of SemaphoreUI. See [Terraform Provider Acceptance Tests](https://github.com/CruGlobal/terraform-provider-semaphoreui/blob/main/.github/workflows/test.yml#L64) for a list of versions.
+This fork keeps the upstream provider foundation and adds functionality needed for environments that manage OpenTofu natively through SemaphoreUI.
 
-### SemaphoreUI API Client
-The SemaphoreUI API client is generated from the Swagger (OpenAPI-2.0) [api-docs.yml](https://github.com/semaphoreui/semaphore/blob/develop/api-docs.yml) using [go-swagger](https://goswagger.io/go-swagger/).
-To re-generate the client, ensure you have [go-swagger](https://goswagger.io/go-swagger/install/install-binary/) installed and configured on your system and then run `task client`.
+Current differences include:
 
-### Support
-This provider was developed for an internal use case and released as open source for anyone to use. It is not actively maintained, but we welcome contributions and issues.
+- native SemaphoreUI template support for `app = "tofu"`
+- inventory support for `tofu_workspace`
+- ongoing maintenance of fork-specific functionality until it is available upstream
+
+## Requirements
+
+This provider requires a running [SemaphoreUI](https://semaphoreui.com/) instance.
+
+The provider acceptance tests target supported SemaphoreUI versions defined in [`.github/workflows/test.yml`](.github/workflows/test.yml).
+
+## SemaphoreUI API Client
+
+The SemaphoreUI API client is generated from the Swagger (OpenAPI 2.0) specification in [`api-docs.yml`](api-docs.yml), which is derived from the upstream SemaphoreUI API definition in the [`semaphoreui/semaphore`](https://github.com/semaphoreui/semaphore) project.
+
+To regenerate the client, install [go-swagger](https://goswagger.io/go-swagger/install/install-binary/) and run:
+
+```shell
+task client
+```
+
+## Publishing
+
+This fork is intended to be published as its own provider lineage under the `SiM22` namespace.
+
+## Support
+
+This fork is maintained on a best-effort basis. Issues and pull requests are welcome.
