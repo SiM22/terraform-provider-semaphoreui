@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"sort"
 	apiclient "terraform-provider-semaphoreui/semaphoreui/client"
 	"terraform-provider-semaphoreui/semaphoreui/client/project"
 	"terraform-provider-semaphoreui/semaphoreui/models"
@@ -47,6 +48,17 @@ func (r *projectEnvironmentResource) Configure(_ context.Context, req resource.C
 
 func (r *projectEnvironmentResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_project_environment"
+}
+
+func projectEnvironmentSecretsObjectType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"id":    types.Int64Type,
+			"type":  types.StringType,
+			"name":  types.StringType,
+			"value": types.StringType,
+		},
+	}
 }
 
 func (model ProjectEnvironmentModel) SecretValue(ctx context.Context, name string, varType string) types.String {
@@ -130,34 +142,25 @@ func convertProjectEnvironmentModelToEnvironmentRequest(ctx context.Context, env
 			Name: secret.Name.ValueString(),
 			Type: secret.Type.ValueString(),
 		}
-		// Create all secrets from env missing an ID
 		if secret.ID.IsUnknown() || secret.ID.IsNull() {
 			modelSecret.Operation = "create"
 			modelSecret.Secret = secret.Value.ValueString()
 		} else {
 			modelSecret.ID = secret.ID.ValueInt64()
-			// Find the previous secret
 			prevSecret := prev.Secret(ctx, secret.ID)
-			if prevSecret != nil {
-				// Update if any field has changed
-				if !secret.Name.Equal(prevSecret.Name) || !secret.Value.Equal(prevSecret.Value) || !secret.Type.Equal(prevSecret.Type) {
-					modelSecret.Operation = "update"
-					if !secret.Name.Equal(prevSecret.Name) {
-						modelSecret.Name = secret.Name.ValueString()
-					}
-				}
+			if prevSecret == nil || !secret.Name.Equal(prevSecret.Name) || !secret.Value.Equal(prevSecret.Value) || !secret.Type.Equal(prevSecret.Type) {
+				modelSecret.Operation = "update"
+				modelSecret.Secret = secret.Value.ValueString()
 			}
 		}
 		secrets = append(secrets, &modelSecret)
 	}
 
-	// Delete all secrets from prev with an ID missing from env
 	for _, prevSecret := range prevSecrets {
 		secret := env.Secret(ctx, prevSecret.ID)
 		if secret == nil {
 			secrets = append(secrets, &models.EnvironmentSecretRequest{
-				ID: prevSecret.ID.ValueInt64(),
-				// Can't delete a secret without sending the Type
+				ID:        prevSecret.ID.ValueInt64(),
 				Type:      prevSecret.Type.ValueString(),
 				Operation: "delete",
 			})
@@ -200,14 +203,13 @@ func convertEnvironmentResponseToProjectEnvironmentModel(ctx context.Context, en
 
 	sort.Sort(ByEnvironmentID(environment.Secrets))
 
-	var secrets []ProjectEnvironmentSecretModel
+	secrets := []ProjectEnvironmentSecretModel{}
 	for _, secret := range environment.Secrets {
 		modelSecret := ProjectEnvironmentSecretModel{
 			ID:   types.Int64Value(secret.ID),
 			Type: types.StringValue(secret.Type),
 			Name: types.StringValue(secret.Name),
 		}
-		// Value from previous state since secrets are not returned in the response
 		prevSecret := prev.Secret(ctx, modelSecret.ID)
 		if prevSecret != nil {
 			modelSecret.Value = prevSecret.Value
@@ -216,33 +218,25 @@ func convertEnvironmentResponseToProjectEnvironmentModel(ctx context.Context, en
 		}
 		secrets = append(secrets, modelSecret)
 	}
-	if len(secrets) == 0 && !prev.Secrets.IsNull() && !prev.Secrets.IsUnknown() {
-		prev.Secrets.ElementsAs(ctx, &secrets, false)
+
+	if len(secrets) == 0 && prev.Secrets.IsNull() {
+		model.Secrets = types.ListNull(projectEnvironmentSecretsObjectType())
+		return model
 	}
 
-	envSecrets, _ := types.ListValueFrom(ctx, types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"id":    types.Int64Type,
-			"type":  types.StringType,
-			"name":  types.StringType,
-			"value": types.StringType,
-		},
-	}, secrets)
-
+	envSecrets, _ := types.ListValueFrom(ctx, projectEnvironmentSecretsObjectType(), secrets)
 	model.Secrets = envSecrets
 
 	return model
 }
 
 func (r *projectEnvironmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Retrieve values from plan
 	var plan ProjectEnvironmentModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	//Create new projectEnvironment
 	response, err := r.client.Project.PostProjectProjectIDEnvironment(&project.PostProjectProjectIDEnvironmentParams{
 		ProjectID:   plan.ProjectID.ValueInt64(),
 		Environment: convertProjectEnvironmentModelToEnvironmentRequest(ctx, plan, &ProjectEnvironmentModel{}),
@@ -268,16 +262,13 @@ func (r *projectEnvironmentResource) Create(ctx context.Context, req resource.Cr
 	}
 	plan = convertEnvironmentResponseToProjectEnvironmentModel(ctx, payload.Payload, &plan)
 
-	// Set state to fully populated data
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Get current state
 	var state ProjectEnvironmentModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -297,16 +288,13 @@ func (r *projectEnvironmentResource) Read(ctx context.Context, req resource.Read
 	}
 	model := convertEnvironmentResponseToProjectEnvironmentModel(ctx, response.Payload, &state)
 
-	// Set refreshed state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *projectEnvironmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Retrieve values from plan
 	var plan, state ProjectEnvironmentModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -347,14 +335,12 @@ func (r *projectEnvironmentResource) Update(ctx context.Context, req resource.Up
 }
 
 func (r *projectEnvironmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// Retrieve values from state
 	var state ProjectEnvironmentModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Delete existing resource
 	_, err := r.client.Project.DeleteProjectProjectIDEnvironmentEnvironmentID(&project.DeleteProjectProjectIDEnvironmentEnvironmentIDParams{
 		ProjectID:     state.ProjectID.ValueInt64(),
 		EnvironmentID: state.ID.ValueInt64(),
