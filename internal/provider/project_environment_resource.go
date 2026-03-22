@@ -50,6 +50,17 @@ func (r *projectEnvironmentResource) Metadata(_ context.Context, req resource.Me
 	resp.TypeName = req.ProviderTypeName + "_project_environment"
 }
 
+func projectEnvironmentSecretsObjectType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"id":    types.Int64Type,
+			"type":  types.StringType,
+			"name":  types.StringType,
+			"value": types.StringType,
+		},
+	}
+}
+
 func (model ProjectEnvironmentModel) SecretValue(ctx context.Context, name string, varType string) types.String {
 	if model.Secrets.IsNull() || model.Secrets.IsUnknown() {
 		return types.StringValue("")
@@ -208,15 +219,12 @@ func convertEnvironmentResponseToProjectEnvironmentModel(ctx context.Context, en
 		secrets = append(secrets, modelSecret)
 	}
 
-	envSecrets, _ := types.ListValueFrom(ctx, types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"id":    types.Int64Type,
-			"type":  types.StringType,
-			"name":  types.StringType,
-			"value": types.StringType,
-		},
-	}, secrets)
+	if len(secrets) == 0 && prev.Secrets.IsNull() {
+		model.Secrets = types.ListNull(projectEnvironmentSecretsObjectType())
+		return model
+	}
 
+	envSecrets, _ := types.ListValueFrom(ctx, projectEnvironmentSecretsObjectType(), secrets)
 	model.Secrets = envSecrets
 
 	return model

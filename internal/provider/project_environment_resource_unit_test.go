@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-semaphoreui/semaphoreui/models"
 )
@@ -12,14 +11,7 @@ import (
 func testProjectEnvironmentSecretsList(t *testing.T, secrets []ProjectEnvironmentSecretModel) types.List {
 	t.Helper()
 
-	list, diags := types.ListValueFrom(context.Background(), types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"id":    types.Int64Type,
-			"type":  types.StringType,
-			"name":  types.StringType,
-			"value": types.StringType,
-		},
-	}, secrets)
+	list, diags := types.ListValueFrom(context.Background(), projectEnvironmentSecretsObjectType(), secrets)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics creating secrets list: %v", diags)
 	}
@@ -106,5 +98,60 @@ func TestConvertEnvironmentResponseToProjectEnvironmentModelDoesNotMaskMissingSe
 	}
 	if len(secrets) != 0 {
 		t.Fatalf("expected no secrets when API returns none, got %d", len(secrets))
+	}
+}
+
+func TestConvertEnvironmentResponseToProjectEnvironmentModelPreservesNullSecretsWhenUnset(t *testing.T) {
+	ctx := context.Background()
+
+	prev := &ProjectEnvironmentModel{
+		ProjectID: types.Int64Value(1),
+		Name:      types.StringValue("dockhand"),
+		Secrets:   types.ListNull(projectEnvironmentSecretsObjectType()),
+	}
+	environment := &models.Environment{
+		ID:        2,
+		ProjectID: 1,
+		Name:      "dockhand",
+		JSON:      "{}",
+		Env:       "{}",
+		Secrets:   []*models.EnvironmentSecret{},
+	}
+
+	model := convertEnvironmentResponseToProjectEnvironmentModel(ctx, environment, prev)
+	if !model.Secrets.IsNull() {
+		t.Fatal("expected null secrets when prior state omitted secrets")
+	}
+}
+
+func TestConvertEnvironmentResponseToProjectEnvironmentModelPreservesEmptySecretsWhenExplicit(t *testing.T) {
+	ctx := context.Background()
+
+	prev := &ProjectEnvironmentModel{
+		ProjectID: types.Int64Value(1),
+		Name:      types.StringValue("dockhand"),
+		Secrets:   testProjectEnvironmentSecretsList(t, []ProjectEnvironmentSecretModel{}),
+	}
+	environment := &models.Environment{
+		ID:        2,
+		ProjectID: 1,
+		Name:      "dockhand",
+		JSON:      "{}",
+		Env:       "{}",
+		Secrets:   []*models.EnvironmentSecret{},
+	}
+
+	model := convertEnvironmentResponseToProjectEnvironmentModel(ctx, environment, prev)
+	if model.Secrets.IsNull() {
+		t.Fatal("expected empty secrets list, got null")
+	}
+
+	var secrets []ProjectEnvironmentSecretModel
+	diags := model.Secrets.ElementsAs(ctx, &secrets, false)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics reading secrets list: %v", diags)
+	}
+	if len(secrets) != 0 {
+		t.Fatalf("expected explicit empty secrets list, got %d elements", len(secrets))
 	}
 }
