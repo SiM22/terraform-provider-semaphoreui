@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"sort"
 	apiclient "terraform-provider-semaphoreui/semaphoreui/client"
 	"terraform-provider-semaphoreui/semaphoreui/client/project"
 	"terraform-provider-semaphoreui/semaphoreui/models"
@@ -148,8 +149,8 @@ func convertProjectEnvironmentModelToEnvironmentRequest(ctx context.Context, env
 		secret := env.Secret(ctx, prevSecret.ID)
 		if secret == nil {
 			secrets = append(secrets, &models.EnvironmentSecretRequest{
-				ID: prevSecret.ID.ValueInt64(),
-				Type: prevSecret.Type.ValueString(),
+				ID:        prevSecret.ID.ValueInt64(),
+				Type:      prevSecret.Type.ValueString(),
 				Operation: "delete",
 			})
 		}
