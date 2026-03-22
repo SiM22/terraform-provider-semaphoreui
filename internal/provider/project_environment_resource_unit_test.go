@@ -95,6 +95,9 @@ func TestConvertEnvironmentResponseToProjectEnvironmentModelDoesNotMaskMissingSe
 	}
 
 	model := convertEnvironmentResponseToProjectEnvironmentModel(ctx, environment, prev)
+	if model.Secrets.IsNull() {
+		t.Fatal("expected empty secrets list, got null")
+	}
 
 	var secrets []ProjectEnvironmentSecretModel
 	diags := model.Secrets.ElementsAs(ctx, &secrets, false)

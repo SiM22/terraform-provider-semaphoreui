@@ -192,7 +192,7 @@ func convertEnvironmentResponseToProjectEnvironmentModel(ctx context.Context, en
 
 	sort.Sort(ByEnvironmentID(environment.Secrets))
 
-	var secrets []ProjectEnvironmentSecretModel
+	secrets := []ProjectEnvironmentSecretModel{}
 	for _, secret := range environment.Secrets {
 		modelSecret := ProjectEnvironmentSecretModel{
 			ID:   types.Int64Value(secret.ID),
