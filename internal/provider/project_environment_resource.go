@@ -54,7 +54,7 @@ func (model ProjectEnvironmentModel) SecretValue(ctx context.Context, name strin
 		return types.StringValue("")
 	}
 	var secrets []ProjectEnvironmentSecretModel
-	diags := model.Secrets.ElementsAs(ctx, &secrets, false)
+	diags := model.Secrets.ElementsAs(ctx, &secrets, true)
 	if diags.HasError() {
 		return types.StringValue("")
 	}
@@ -72,7 +72,7 @@ func (model ProjectEnvironmentModel) Secret(ctx context.Context, id types.Int64)
 	}
 
 	var secrets []ProjectEnvironmentSecretModel
-	diags := model.Secrets.ElementsAs(ctx, &secrets, false)
+	diags := model.Secrets.ElementsAs(ctx, &secrets, true)
 	if diags.HasError() {
 		return nil
 	}
@@ -84,6 +84,8 @@ func (model ProjectEnvironmentModel) Secret(ctx context.Context, id types.Int64)
 	}
 	return nil
 }
+
+
 
 func (r *projectEnvironmentResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = ProjectEnvironmentSchema().GetResource(ctx)
@@ -117,12 +119,12 @@ func convertProjectEnvironmentModelToEnvironmentRequest(ctx context.Context, env
 	if env.Secrets.IsNull() || env.Secrets.IsUnknown() {
 		envSecrets = []ProjectEnvironmentSecretModel{}
 	} else {
-		env.Secrets.ElementsAs(ctx, &envSecrets, false)
+		env.Secrets.ElementsAs(ctx, &envSecrets, true)
 	}
 	if prev.Secrets.IsUnknown() || prev.Secrets.IsNull() {
 		prevSecrets = []ProjectEnvironmentSecretModel{}
 	} else {
-		prev.Secrets.ElementsAs(ctx, &prevSecrets, false)
+		prev.Secrets.ElementsAs(ctx, &prevSecrets, true)
 	}
 
 	for _, secret := range envSecrets {
@@ -225,7 +227,7 @@ func convertEnvironmentResponseToProjectEnvironmentModel(ctx context.Context, en
 		secrets = append(secrets, modelSecret)
 	}
 	if len(secrets) == 0 && !prev.Secrets.IsNull() && !prev.Secrets.IsUnknown() {
-		prev.Secrets.ElementsAs(ctx, &secrets, false)
+		prev.Secrets.ElementsAs(ctx, &secrets, true)
 	}
 
 	envSecrets, _ := types.ListValueFrom(ctx, types.ObjectType{
