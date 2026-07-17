@@ -103,7 +103,7 @@ func ProjectIntegrationSchema() superschema.Schema {
 				Resource: &schemaR.StringAttribute{
 					Optional: true,
 					Computed: true,
-					Default:  stringdefault.StaticString("none"),
+					Default:  stringdefault.StaticString(""),
 				},
 				DataSource: &schemaD.StringAttribute{
 					Computed: true,

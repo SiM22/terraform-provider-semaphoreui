@@ -122,7 +122,7 @@ func TestAcc_ProjectIntegrationResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccProjectIntegrationExists("semaphoreui_project_integration.test"),
 					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "name", fmt.Sprintf("Integration-%s", nameSuffix)),
-					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_method", "none"),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_method", ""),
 					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_header", ""),
 					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "searchable", "false"),
 					resource.TestCheckNoResourceAttr("semaphoreui_project_integration.test", "auth_secret_id"),
@@ -159,7 +159,7 @@ func TestAcc_ProjectIntegrationResource_basic(t *testing.T) {
 				Config: testAccProjectIntegrationConfig(nameSuffix, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccProjectIntegrationExists("semaphoreui_project_integration.test"),
-					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_method", "none"),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_method", ""),
 					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_header", ""),
 					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "searchable", "false"),
 					resource.TestCheckNoResourceAttr("semaphoreui_project_integration.test", "auth_secret_id"),
